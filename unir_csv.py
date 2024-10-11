@@ -40,5 +40,5 @@ def combinar_csvs(ruta_archivos):
 
 
 if __name__ == "__main__":
-    ruta_archivos = 'Archivos/Sciencedirect/ArchivosScienceDirect_CSV'
+    ruta_archivos = 'Archivos/TF/ArchivosTF_CSV'
     combinar_csvs(ruta_archivos)
