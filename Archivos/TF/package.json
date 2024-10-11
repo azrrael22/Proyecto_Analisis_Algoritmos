@@ -1,0 +1,17 @@
+{
+  "name": "tf",
+  "version": "1.0.0",
+  "main": "scrapTf.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "puppeteer": "^23.5.0"
+  }
+}
