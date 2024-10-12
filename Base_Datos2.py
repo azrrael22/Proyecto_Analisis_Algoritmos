@@ -37,10 +37,10 @@ CREATE TABLE IF NOT EXISTS publicaciones (
     primer_autor TEXT,
     anio_publicacion INTEGER DEFAULT 0,
     tipo_producto TEXT,
-    paginas INTEGER,
+    paginas TEXT,
     journal TEXT,
-    volumen INTEGER DEFAULT 0,
-    issue INTEGER DEFAULT 0,
+    volumen TEXT,
+    issue TEXT,
     base_datos TEXT,
     resumen TEXT,
     url TEXT,
@@ -52,6 +52,13 @@ conexion.commit()
 # Expresión regular para separadores de autores
 separadores = r';|\s+and\s+'
 
+# Función para extraer el año de un valor dado
+def extraer_anio(valor):
+    match = re.search(r'\d{4}', str(valor))  # Buscar un patrón de 4 dígitos en el valor
+    if match:
+        return int(match.group(0))  # Devolver el valor como entero
+    return None  # Si no hay coincidencia, devolver None
+
 # Recorrer los DataFrames e insertar registros
 for df, nombre_base in dfList:
     for index, row in df.iterrows():
@@ -59,13 +66,27 @@ for df, nombre_base in dfList:
         autores = row.get('Authors') or row.get('author')
         anio_publicacion = row.get('Publication Year') or row.get('year') or row.get('Year')
         tipo_producto = row.get('Document Identifier') or row.get('Document Type') or row.get('ENTRYTYPE')
+        
+        pagInicio = row.get('Start Page')
+        pagFin = row.get('End Page')
+
+        # Combinar las páginas en un solo valor si ambas existen
+        if pd.notnull(pagInicio) and pd.notnull(pagInicio):
+            paginas = f"{pagInicio}-{pagInicio}"
+        else:
+            # Si no existen las dos páginas, verificar 'pages' o 'Page count'
+            paginas = row.get('pages') or row.get('Page count')
+
         journal = row.get('Publication Title') or row.get('journal') or row.get('Source title')
+        volumen = row.get('Volume') or row.get('volume')
+        issue = row.get('Issue') or row.get('number')
         base_datos = nombre_base  # Asignar el nombre de la base de datos
         resumen = row.get('Abstract') or row.get('abstract')
+        url = row.get('url') or row.get('PDF Link') or row.get('Link')
         doi = row.get('DOI') or row.get('doi')
 
         # Asegurarse de que los campos numéricos sean del tipo correcto
-        anio_publicacion = int(anio_publicacion) if pd.notnull(anio_publicacion) else None
+        anio_publicacion = extraer_anio(anio_publicacion)
 
         # Extraer el primer autor
         if pd.notnull(autores):
@@ -79,7 +100,7 @@ for df, nombre_base in dfList:
             tipo_producto = tipo_producto.replace('IEEE', '').strip()
 
         # Verificar que los campos obligatorios no sean None
-        if pd.notnull(titulo) :
+        if pd.notnull(titulo):
             try:
                 cursor.execute('''
                 INSERT INTO publicaciones (
