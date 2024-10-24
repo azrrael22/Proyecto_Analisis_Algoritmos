@@ -3,11 +3,11 @@ import sqlite3
 import re
 
 # Rutas de los archivos CSV
-rutaIEEE = 'Archivos/archivo_combinadoIEEE.csv'
-rutaScience = 'Archivos/archivo_combinadoScienceDirect.csv'
-rutaScopus = 'Archivos/scopus.csv'
-rutaSage = 'Archivos/archivo_combinadoSage.csv'
-rutaTF = 'Archivos/archivo_combinadoTF.csv'
+rutaIEEE = 'Archivos/Archivos_Base_Datos/archivo_combinadoIEEE.csv'
+rutaScience = 'Archivos/Archivos_Base_Datos/archivo_combinadoScienceDirect.csv'
+rutaScopus = 'Archivos/Archivos_Base_Datos/scopus.csv'
+rutaSage = 'Archivos/Archivos_Base_Datos/archivo_combinadoSage.csv'
+rutaTF = 'Archivos/Archivos_Base_Datos/archivo_combinadoTFV2.csv'
 
 # Leer los CSV
 df1 = pd.read_csv(rutaIEEE) 
@@ -33,16 +33,16 @@ cursor = conexion.cursor()
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS publicaciones (
     id_publicacion INTEGER PRIMARY KEY AUTOINCREMENT,
+    base_datos TEXT,
     titulo TEXT NOT NULL UNIQUE,
-    primer_autor TEXT,
-    anio_publicacion INTEGER DEFAULT 0,
-    tipo_producto TEXT,
+    primer_autor TEXT NOT NULL,
+    anio_publicacion INTEGER NOT NULL,
+    tipo_producto TEXT NOT NULL,
     paginas TEXT,
-    journal TEXT,
+    journal TEXT NOT NULL,
     volumen TEXT,
     issue TEXT,
-    base_datos TEXT,
-    resumen TEXT,
+    resumen TEXT NOT NULL,
     url TEXT,
     doi TEXT
 );
@@ -100,15 +100,16 @@ for df, nombre_base in dfList:
             tipo_producto = tipo_producto.replace('IEEE', '').strip()
 
         # Verificar que los campos obligatorios no sean None
-        if pd.notnull(titulo):
+        if pd.notnull(titulo) and pd.notnull(resumen) and pd.notnull(primer_autor) and pd.notnull(anio_publicacion) and pd.notnull(tipo_producto) and pd.notnull(journal):
             try:
                 cursor.execute('''
                 INSERT INTO publicaciones (
-                    titulo, primer_autor, anio_publicacion,
-                    tipo_producto, paginas, journal, volumen, issue, base_datos,
+                    base_datos, titulo, primer_autor, anio_publicacion,
+                    tipo_producto, paginas, journal, volumen, issue,
                     resumen, url, doi
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
+                    base_datos,
                     titulo,
                     primer_autor,
                     anio_publicacion,
@@ -117,7 +118,6 @@ for df, nombre_base in dfList:
                     journal,
                     volumen,
                     issue,
-                    base_datos,
                     resumen,
                     url,
                     doi

@@ -47,8 +47,8 @@ def process_bib_folder(bib_folder, output_folder):
             bib_to_csv_auto(bib_file, csv_file)
 
 # Uso de la función
-bib_folder = 'Archivos/TF/ArchivosTF_2024-10-10'  # Cambia esto por la carpeta donde están los archivos .bib
-output_folder = 'Archivos/TF/ArchivosTF_CSV'  # Cambia esto por la carpeta donde quieres guardar los archivos .csv
+bib_folder = 'Archivos/TF/ArchivoTF_2024-10-24'  # Cambia esto por la carpeta donde están los archivos .bib
+output_folder = 'Archivos/TF/ArchivosTF2_CSV'  # Cambia esto por la carpeta donde quieres guardar los archivos .csv
 
 # Procesar todos los archivos .bib en la carpeta
 process_bib_folder(bib_folder, output_folder)
