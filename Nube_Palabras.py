@@ -22,10 +22,17 @@ conexion.close()
 frecuencias_dict = dict(zip(df_frecuencia['variable'], df_frecuencia['total_frecuencia']))
 
 # Generar la nube de palabras
-wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='viridis').generate_from_frequencies(frecuencias_dict)
+wordcloud = WordCloud(
+    width=1920, 
+    height=1080, 
+    background_color='black', 
+    colormap='Set3',
+    scale=2,
+    max_words=120,       
+    ).generate_from_frequencies(frecuencias_dict)
 
 # Mostrar la nube de palabras
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(12, 6))
 plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')  # Quitar ejes
 plt.show()
