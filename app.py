@@ -8,6 +8,7 @@ import base64
 import plotly.express as px
 from pyvis.network import Network
 import networkx as nx
+from wordcloud import WordCloud
 
 app = Flask(__name__)
 
@@ -22,6 +23,8 @@ def home():
         <li><a href="/grafos_grafica">Grafos de Artículos y Países</a></li>
         <li><a href="/journal">Cantidad de Artículos por Journal</a></li>
         <li><a href="/tipo_producto">Cantidad Total de Artículos por Tipo de Producto</a></li>
+        <li><a href="/consulta_frecuencias">Frecuencia de Variables por Categoría</a></li>
+        <li><a href="/nube_palabras">Nube de Palabras</a></li>
     </ul>
     '''
 
@@ -197,17 +200,17 @@ def grafos_grafica():
         G = nx.Graph()
         
         for journal in top_journals:
-            G.add_node(journal, type='journal')
+            G.add_node(journal, nodetype='blue', type='journal')
             journal_articles = [article for article in articles if article['journal'] == journal]
             top_articles = sorted(journal_articles, key=lambda x: x['citations'], reverse=True)[:15]
             
             for article in top_articles:
-                G.add_node(article['title'], type='article', country=article['first_author_country'])
+                G.add_node(article['title'], nodetype='red', type='article', country=article['first_author_country'])
                 G.add_edge(journal, article['title'])
                 
                 country = article['first_author_country']
                 if country not in G:
-                    G.add_node(country, type='country')
+                    G.add_node(country, nodetype='green', type='country')
                 G.add_edge(article['title'], country)
         
         return G
@@ -280,5 +283,70 @@ def tipo_producto():
     graph_html = fig.to_html(full_html=False)
 
     return render_template('tipo_producto.html', graph_html=graph_html)
+
+@app.route('/consulta_frecuencias')
+def consulta_frecuencias():
+    # Conectar a la base de datos
+    db_path = 'bibliometria.db'
+    conn = sqlite3.connect(db_path)
+
+    # Consultar la frecuencia de cada variable junto con su categoría
+    query = '''
+    SELECT categoria, variable, SUM(frecuencia) AS total_frecuencia
+    FROM analisis_frecuencias
+    GROUP BY categoria, variable
+    ORDER BY categoria, total_frecuencia DESC;
+    '''
+    df_frecuencia = pd.read_sql_query(query, conn)
+
+    # Cerrar conexión
+    conn.close()
+
+    # Preparar los datos para el gráfico
+    fig = px.bar(df_frecuencia, x='variable', y='total_frecuencia', color='categoria', title='Frecuencia de Variables por Categoría', labels={'total_frecuencia': 'Frecuencia Total', 'variable': 'Variable'})
+
+    # Convertir el gráfico a HTML
+    graph_html = fig.to_html(full_html=False)
+
+    return render_template('consulta_frecuencias.html', graph_html=graph_html)
+
+
+@app.route('/nube_palabras')
+def nube_palabras():
+    # Conectar a la base de datos
+    db_path = 'bibliometria.db'
+    conn = sqlite3.connect(db_path)
+
+    # Consultar los datos para la nube de palabras
+    query = """
+    SELECT categoria, variable, SUM(frecuencia) AS total_frecuencia
+    FROM analisis_frecuencias
+    GROUP BY categoria, variable
+    ORDER BY categoria, total_frecuencia DESC;
+    """
+    data = conn.execute(query).fetchall()
+
+    # Cerrar conexión
+    conn.close()
+
+    # Convertir los datos a un diccionario
+    word_freq = {row[1]: row[2] for row in data}
+
+    # Generar la nube de palabras
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+
+    # Guardar la nube de palabras en un buffer
+    buf = io.BytesIO()
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    img_data = base64.b64encode(buf.getvalue()).decode('utf8')
+    buf.close()
+
+    return render_template('nube_palabras.html', img_data=img_data)
+
 if __name__ == '__main__':
     app.run(debug=True)
